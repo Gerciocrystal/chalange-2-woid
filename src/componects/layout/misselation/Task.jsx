@@ -1,10 +1,29 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { Box, HStack, Radio, Switch, Text } from "@chakra-ui/react";
-import moment from "moment";
+import { UseAuth } from "../../../context/AuthProvider/UseAuth";
 
 const Task = ({ task }) => {
   const [done, setDone] = useState(false);
+  const { tasksByDay } = UseAuth();
+
+  const handleDone = () => {
+    tasksByDay.forEach((taskDay, index) => {
+      if (taskDay === task) {
+        tasksByDay[index].done = !tasksByDay[index].done;
+      }
+    });
+  };
+  useEffect(() => {
+    const handleIsDone = () => {
+      tasksByDay.forEach((taskDay, index) => {
+        if (taskDay === task) {
+          setDone(tasksByDay[index]?.done || false);
+        }
+      });
+    };
+    handleIsDone();
+  }, []);
   return (
     <Box
       //   onClick={() => (done ? console.log("precionado") : setDone(true))}
@@ -27,7 +46,10 @@ const Task = ({ task }) => {
         <Switch
           id={task.value}
           value={done}
-          onChange={(e) => setDone(e.target.checked)}
+          onChange={(e) => {
+            handleDone();
+            setDone(e.target.checked);
+          }}
         />
         <Text
           color="font_color"
@@ -42,6 +64,8 @@ const Task = ({ task }) => {
   );
 };
 
-Task.propTypes = {};
+Task.propTypes = {
+  task: PropTypes.object,
+};
 
 export default Task;

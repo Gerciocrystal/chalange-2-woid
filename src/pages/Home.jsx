@@ -8,37 +8,27 @@ import {
   useToast,
   Image,
 } from "@chakra-ui/react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Header from "../componects/Header";
 import moment from "moment";
-import Days from "../componects/layout/misselation/Days";
+import elipse_2 from "../assets/images/Ellipse 2.png";
+import elipse_1 from "../assets/images/Ellipse 3.png";
 import Task from "../componects/layout/misselation/Task";
 import AddTask from "../componects/layout/AddTask";
 import { UseAuth } from "../context/AuthProvider/UseAuth";
+import DaysWrapper from "../componects/layout/DaysWrapper";
+import TaskWrapper from "../componects/layout/TaskWrapper";
 const Home = () => {
   const today = moment();
-  let nextDays = new Array();
-  const { onOpen, isOpen, onClose } = useDisclosure();
-  for (let i = 0; i < 6; i++) {
-    const day = today.clone().add(i, "days");
-    const dayName = day.format("dddd");
-    const dayId = day.format("DD-MM-YYYY");
-
-    nextDays.push({
-      value: dayName,
-      id: dayId,
-    });
-  }
   const [isDayChoosed, setIsDayChoosed] = useState(false);
+  const { onOpen, isOpen, onClose } = useDisclosure();
   const [activeDay, setActionActiveDay] = useState(today);
   const [activeTitle, setActiveTitle] = useState("Choose the Day");
   const { tasksByDay, settasksByDay } = UseAuth();
   const chooseDay = (day) => {
     setIsDayChoosed(true);
     setActiveTitle(day?.value);
-    const newDate = moment(day);
-    setActionActiveDay(newDate);
-    console.log(newDate);
+    setActionActiveDay(moment(day?.id).format("MM-DD-YYYY"));
   };
   const Toast = useToast();
   const [tasks, setTasks] = useState([]);
@@ -67,8 +57,11 @@ const Home = () => {
     }
 
     const temp = tasks;
-    temp.push({ ...newTask, dayId: activeDay });
-    settasksByDay((prev) => ({ ...prev, ...temp }));
+    temp.push({ ...newTask, dayId: activeDay, done: false });
+    settasksByDay((prev) => [
+      ...prev,
+      { ...newTask, dayId: activeDay, done: false },
+    ]);
     setTasks(temp);
   };
   const handleGoBack = () => {
@@ -76,7 +69,17 @@ const Home = () => {
     setTasks([]);
     setActionActiveDay(today);
   };
-  console.log(tasksByDay);
+  useEffect(() => {
+    const handleTask = () => {
+      tasksByDay.map((taskDay) => {
+        if (taskDay.dayId === activeDay) {
+          console.log("entrei");
+          setTasks((prev) => [...prev, taskDay]);
+        }
+      });
+    };
+    handleTask();
+  }, [activeDay]);
   return (
     <Container
       minW="100%"
@@ -85,8 +88,22 @@ const Home = () => {
       justifyContent="center"
       alignItems="center"
     >
-    
+      <Image
+        src={elipse_2}
+        boxSize="80%"
+        position="absolute"
+        top={0}
+        left={0}
+      />
+      <Image
+        src={elipse_1}
+        boxSize="360px"
+        position="absolute"
+        top={0}
+        right={0}
+      />
       <Box
+        zIndex={9}
         background="background"
         minW="360px"
         display="flex"
@@ -105,42 +122,9 @@ const Home = () => {
             </Text>
           </Box>
           {isDayChoosed ? (
-            <>
-              {tasks.length > 0 ? (
-                tasks.map((task, index) => (
-                  <Task task={task} key={task?.id || `${index}_Tasts`} />
-                ))
-              ) : (
-                <Text>Sem Tarefas</Text>
-              )}
-              <Button
-                background="primary"
-                color="black"
-                borderRadius="full"
-                fontWeight="bold"
-                fontSize="1.6rem"
-                height="45px"
-                alignSelf="end"
-                transition="all .3s ease"
-                mt="52px"
-                _hover={{
-                  background: "primary",
-                  color: "white",
-                }}
-                onClick={onOpen}
-              >
-                +
-              </Button>
-            </>
+            <TaskWrapper tasks={tasks} onOpen={onOpen} />
           ) : (
-            nextDays.length > 0 &&
-            nextDays.map((day, index) => (
-              <Days
-                day={day}
-                key={day?.id || index}
-                handleFunction={chooseDay}
-              />
-            ))
+            <DaysWrapper chooseDay={chooseDay} />
           )}
         </VStack>
       </Box>
